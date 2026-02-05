@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProtoVerse | Manage Requests</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%); 
+            min-height: 100vh; 
+        }
+        .glass-sidebar { background: rgba(255, 255, 255, 0.45); backdrop-filter: blur(10px); border-right: 1px solid rgba(255, 255, 255, 0.5); }
+        .glass-card { background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(15px); border-radius: 2rem; border: 1px solid rgba(255, 255, 255, 0.5); }
+        .active-nav { background: rgba(255, 255, 255, 0.6); color: #2563eb; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+        .modal-overlay { background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(8px); }
+    </style>
+</head>
+<body class="flex">
+
+    <aside class="w-72 glass-sidebar h-screen p-8 flex flex-col sticky top-0">
+        <div class="flex flex-col items-center mb-10">
+            <h2 class="text-2xl font-bold text-blue-600 tracking-wider">ProtoVerse</h2>
+        </div>
+        <nav class="flex-grow space-y-4">
+            <button onclick="location.href='dashboard.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Dashboard</button>
+            <button class="w-full py-3 px-6 rounded-xl text-left font-semibold active-nav">Manage Requests</button>
+            <button onclick="location.href='tracking.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Tracking</button>
+            <button onclick="location.href='upload.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Upload File</button>
+            <button onclick="location.href='history.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">History</button>
+            <button onclick="location.href='settings.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Settings</button>
+        </nav>
+        <button onclick="location.href='index.html'" class="mt-auto py-3 px-6 rounded-xl text-left font-medium text-red-500 hover:bg-red-50 transition">Sign Out</button>
+    </aside>
+
+    <main class="flex-1 p-12">
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">Manage Requests</h1>
+                <p class="text-slate-500">Review and coordinate the 3D printing queue.</p>
+            </div>
+            <div class="flex gap-4 items-center">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="Search name or file..." class="pl-10 pr-4 py-2 rounded-xl border-none bg-white/50 focus:ring-2 focus:ring-blue-400 focus:bg-white transition shadow-sm w-64">
+                    <span class="absolute left-3 top-2.5 opacity-30">🔍</span>
+                </div>
+                <button id="refreshBtn" onclick="syncData()" class="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">Sync Data</button>
+                <button id="openModalBtn" onclick="toggleModal(true)" class="bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold hover:bg-emerald-600 transition shadow-lg shadow-emerald-100">+ New</button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="glass-card p-6 text-center">
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Pending Tasks</p>
+                <h3 class="text-3xl font-bold text-amber-500 mt-1" id="statPending">0</h3>
+            </div>
+            <div class="glass-card p-6 text-center">
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Currently Printing</p>
+                <h3 class="text-3xl font-bold text-blue-500 mt-1" id="statActive">0</h3>
+            </div>
+            <div class="glass-card p-6 text-center">
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Today's Total</p>
+                <h3 class="text-3xl font-bold text-emerald-500 mt-1" id="statTotal">30 Tasks</h3>
+            </div>
+        </div>
+
+        <div class="glass-card shadow-xl overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-white/20 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
+                    <tr>
+                        <th class="px-8 py-5">User & File</th>
+                        <th class="px-8 py-5">Material</th>
+                        <th class="px-8 py-5">Status</th>
+                        <th class="px-8 py-5 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="requestTableBody" class="text-sm divide-y divide-white/10"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="crudModal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-50">
+        <div class="glass-card bg-white/95 p-10 w-[500px] shadow-2xl border border-white">
+            <h2 id="modalTitle" class="text-2xl font-bold text-slate-800 mb-6">New Request Entry</h2>
+            <div class="space-y-4">
+                <input type="hidden" id="editId">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Student Name</label>
+                    <input type="text" id="mUser" class="w-full p-4 rounded-xl mt-1 bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-400 transition">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">File Name</label>
+                    <input type="text" id="mFile" class="w-full p-4 rounded-xl mt-1 bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-400 transition">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Material</label>
+                    <select id="mMaterial" class="w-full p-4 rounded-xl mt-1 bg-slate-50 border border-slate-100 outline-none">
+                        <option value="PLA">PLA</option>
+                        <option value="PETG">PETG</option>
+                        <option value="ABS">ABS</option>
+                        <option value="TPU">TPU</option>
+                    </select>
+                </div>
+                <div class="flex gap-4 pt-6">
+                    <button onclick="toggleModal(false)" class="flex-1 py-3 text-slate-500 font-bold">Cancel</button>
+                    <button onclick="saveRecord()" id="saveBtn" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold flex-1">Save Record</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let requests = [];
+
+        // 1. DATA DUMMY 30 NAMA & FAIL BERBEZA
+        function initData() {
+            const rawData = [
+                { name: "Ahmad Zikri", file: "Drone_Frame_V2.stl", mat: "Carbon-PLA" },
+                { name: "Siti Nurhaliza", file: "Phone_Stand_Elephant.obj", mat: "PLA" },
+                { name: "Tan Wei Kiat", file: "Mechanical_Gear_A.step", mat: "ABS" },
+                { name: "Nurul Izzah", file: "Heart_Pendant.stl", mat: "PETG" },
+                { name: "Muthu Samy", file: "Spanner_10mm.obj", mat: "ABS" },
+                { name: "Chong Kah Hou", file: "Architectural_Model.stl", mat: "PLA" },
+                { name: "Ariff Danial", file: "GoPro_Mount_V3.step", mat: "TPU" },
+                { name: "Fatin Aqilah", file: "Earring_Display.obj", mat: "PLA" },
+                { name: "Vikram Naidu", file: "Robot_Arm_Joint.stl", mat: "PETG" },
+                { name: "Leong Siew Mei", file: "Cookie_Cutter_Star.obj", mat: "PLA" },
+                { name: "Hafiz Ibrahim", file: "Casing_Sensor_B.stl", mat: "ABS" },
+                { name: "Sarah Natasha", file: "Flower_Vase_Spiral.step", mat: "PETG" },
+                { name: "Chua En Lai", file: "Keycap_Custom.obj", mat: "Resin" },
+                { name: "Anis Suraya", file: "Headphone_Hook.stl", mat: "PLA" },
+                { name: "Kamal Adli", file: "Wrench_Adjustable.obj", mat: "ABS" },
+                { name: "Lim Guan Eng", file: "Bridge_Simulation.stl", mat: "PLA" },
+                { name: "Ravi Shankar", file: "Engine_Piston_Model.step", mat: "PETG" },
+                { name: "Zulfaqar Ali", file: "Nut_Bolt_Metric.obj", mat: "ABS" },
+                { name: "Elena Gilbert", file: "Cosplay_Mask_Mask.stl", mat: "PLA" },
+                { name: "Syed Saddiq", file: "Laptop_Riser_Light.step", mat: "ABS" },
+                { name: "Nur Dhabitah", file: "Medal_Champion.obj", mat: "PLA" },
+                { name: "Kevin Sanjaya", file: "Badminton_Grip_Custom.stl", mat: "TPU" },
+                { name: "Farah Ann", file: "Gymnast_Figurine.step", mat: "PLA" },
+                { name: "Lee Zii Jia", file: "Racket_Vibration_Damp.obj", mat: "TPU" },
+                { name: "Azizulhasni", file: "Bicycle_Handle_Grip.stl", mat: "ABS" },
+                { name: "Pandelela R.", file: "Diving_Clip_V2.step", mat: "PETG" },
+                { name: "Aisya Humaira", file: "Hijab_Clip_Design.obj", mat: "PLA" },
+                { name: "Irfan Sham", file: "Car_Dashboard_Mount.stl", mat: "ABS" },
+                { name: "Ganesan P.", file: "Pipe_Joint_Custom.step", mat: "PETG" },
+                { name: "Wong Mew Choo", file: "Whistle_Emergency.obj", mat: "PLA" }
+            ];
+
+            requests = rawData.map((item, index) => ({
+                id: index + 1,
+                userName: item.name,
+                fileName: item.file,
+                material: item.mat,
+                status: index % 3 === 0 ? "Printing" : "Pending"
+            }));
+
+            renderTable();
+        }
+
+        // 2. RENDER TABLE
+        function renderTable(dataToRender = requests) {
+            const tbody = document.getElementById('requestTableBody');
+            tbody.innerHTML = "";
+            let pending = 0; let active = 0;
+
+            dataToRender.forEach(item => {
+                if (item.status === "Pending") pending++;
+                if (item.status === "Printing") active++;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-white/10 transition group border-b border-white/5";
+                tr.innerHTML = `
+                    <td class="px-8 py-5">
+                        <div class="font-bold text-slate-800">${item.userName}</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">${item.fileName}</div>
+                    </td>
+                    <td class="px-8 py-5 text-xs text-slate-600 font-medium">${item.material}</td>
+                    <td class="px-8 py-5">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold ${item.status === 'Pending' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}">
+                            ${item.status.toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="px-8 py-5 text-right space-x-3">
+                        <button onclick="editRecord(${item.id})" class="text-blue-500 font-bold text-[10px] hover:underline">EDIT</button>
+                        <button onclick="deleteRecord(${item.id})" class="text-red-400 font-bold text-[10px] hover:underline">DELETE</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('statPending').innerText = pending;
+            document.getElementById('statActive').innerText = active;
+            document.getElementById('statTotal').innerText = requests.length + " Tasks";
+        }
+
+        // 3. UI ACTIONS
+        window.toggleModal = (show) => {
+            document.getElementById('crudModal').classList.toggle('hidden', !show);
+            if(!show) {
+                document.getElementById('editId').value = "";
+                document.getElementById('mUser').value = "";
+                document.getElementById('mFile').value = "";
+                document.getElementById('modalTitle').innerText = "New Request Entry";
+            }
+        };
+
+        window.saveRecord = () => {
+            const id = document.getElementById('editId').value;
+            const name = document.getElementById('mUser').value;
+            const file = document.getElementById('mFile').value;
+            const mat = document.getElementById('mMaterial').value;
+
+            if (!name || !file) return alert("Sila lengkapkan semua maklumat!");
+
+            if (id) {
+                const index = requests.findIndex(r => r.id == id);
+                requests[index] = { ...requests[index], userName: name, fileName: file, material: mat };
+            } else {
+                requests.unshift({ id: Date.now(), userName: name, fileName: file, material: mat, status: "Pending" });
+            }
+
+            toggleModal(false); renderTable();
+        };
+
+        window.editRecord = (id) => {
+            const item = requests.find(r => r.id == id);
+            document.getElementById('editId').value = item.id;
+            document.getElementById('mUser').value = item.userName;
+            document.getElementById('mFile').value = item.fileName;
+            document.getElementById('mMaterial').value = item.material;
+            document.getElementById('modalTitle').innerText = "Update Request Info";
+            toggleModal(true);
+        };
+
+        window.deleteRecord = (id) => {
+            if (confirm("Padam rekod ini?")) {
+                requests = requests.filter(r => r.id !== id);
+                renderTable();
+            }
+        };
+
+        window.syncData = () => {
+            alert("Database Synced (Local Cache)!");
+            renderTable();
+        };
+
+        // 4. SEARCH
+        document.getElementById('searchInput').addEventListener('keyup', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = requests.filter(r => 
+                r.userName.toLowerCase().includes(term) || 
+                r.fileName.toLowerCase().includes(term)
+            );
+            renderTable(filtered);
+        });
+
+        window.onload = initData;
+    </script>
+</body>
+</html>

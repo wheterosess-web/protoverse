@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICT 3D Print | Welcome</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .pastel-mesh {
+            background-color: #f0f9ff;
+            background-image: radial-gradient(at 0% 0%, hsla(199,100%,93%,1) 0, transparent 50%), 
+                              radial-gradient(at 50% 0%, hsla(187,100%,93%,1) 0, transparent 50%), 
+                              radial-gradient(at 100% 0%, hsla(210,100%,93%,1) 0, transparent 50%);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .tab-active { border-bottom: 3px solid #60a5fa; color: #1e40af; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="pastel-mesh min-h-screen flex flex-col items-center justify-center p-6">
+
+    <div class="mb-8 text-center">
+        <div class="inline-block p-4 bg-white rounded-3xl shadow-sm mb-4">
+            <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path>
+            </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-slate-800 tracking-tight">ProtoVerse</h1>
+        <p class="text-slate-500">3D Printing Request & Tracking System</p>
+    </div>
+
+    <div class="glass-panel w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden">
+        <div class="flex border-b border-slate-200">
+            <button id="loginTab" class="flex-1 py-5 text-sm font-semibold transition tab-active" onclick="showTab('login')">LOGIN</button>
+            <button id="signupTab" class="flex-1 py-5 text-sm font-semibold text-slate-400 transition" onclick="showTab('signup')">REGISTER</button>
+        </div>
+
+        <div class="p-10">
+            <form id="loginSection" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
+                    <input type="email" id="loginEmail" required class="w-full px-5 py-4 rounded-2xl bg-white/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-300 outline-none transition shadow-sm" placeholder="admin@ict.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Password</label>
+                    <input type="password" id="loginPass" required class="w-full px-5 py-4 rounded-2xl bg-white/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-300 outline-none transition shadow-sm" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white py-4 rounded-2xl font-semibold hover:bg-blue-600 transition shadow-lg mt-4">Sign In</button>
+            </form>
+
+            <form id="signupSection" class="space-y-5 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Full Name</label>
+                    <input type="text" id="regName" class="w-full px-5 py-4 rounded-2xl bg-white/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-300 outline-none transition shadow-sm" placeholder="Enter your name">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
+                    <input type="email" id="regEmail" class="w-full px-5 py-4 rounded-2xl bg-white/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-300 outline-none transition shadow-sm" placeholder="staff@ict.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Password</label>
+                    <input type="password" id="regPass" class="w-full px-5 py-4 rounded-2xl bg-white/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-300 outline-none transition shadow-sm" placeholder="Min 6 characters">
+                </div>
+                <button type="submit" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-semibold hover:bg-slate-700 transition shadow-lg mt-4">Create Admin Account</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="mt-8 text-slate-400 text-xs">
+        &copy; 2024 ProtoVerse • 3D Printing
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+        apiKey: "AIzaSyBe-HZcHhnZwNkAVfC6g-WQExyz0FsOrbo",
+        authDomain: "protoverse-vimytq.firebaseapp.com",
+        projectId: "protoverse-vimytq",
+        storageBucket: "protoverse-vimytq.firebasestorage.app",
+        messagingSenderId: "929755976903",
+        appId: "1:929755976903:web:4dab243f34697fdfe01ae2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Tab Switching Logic
+        window.showTab = (tab) => {
+            if(tab === 'login') {
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('signupSection').classList.add('hidden');
+                document.getElementById('loginTab').classList.add('tab-active');
+                document.getElementById('signupTab').classList.remove('tab-active');
+            } else {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('signupSection').classList.remove('hidden');
+                document.getElementById('signupTab').classList.add('tab-active');
+                document.getElementById('loginTab').classList.remove('tab-active');
+            }
+        }
+
+        // Login Submit
+        document.getElementById('loginSection').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            signInWithEmailAndPassword(auth, email, pass)
+                .then(() => { window.location.href = 'dashboard.html'; })
+                .catch(err => alert("Login Error: " + err.message));
+        });
+
+        // Signup Submit
+        document.getElementById('signupSection').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const pass = document.getElementById('regPass').value;
+            try {
+                const res = await createUserWithEmailAndPassword(auth, email, pass);
+                await setDoc(doc(db, "Users", res.user.uid), {
+                    name: name,
+                    email: email,
+                    role: "Admin",
+                    createdAt: new Date()
+                });
+                window.location.href = 'dashboard.html';
+            } catch (err) { alert("Signup Error: " + err.message); }
+        });
+    </script>
+</body>
+</html>

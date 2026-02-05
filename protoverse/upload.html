@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProtoVerse | Upload File</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%); min-height: 100vh; }
+        .glass-sidebar { background: rgba(255, 255, 255, 0.45); backdrop-filter: blur(10px); border-right: 1px solid rgba(255, 255, 255, 0.5); }
+        .glass-card { background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(15px); border-radius: 2.5rem; border: 1px solid rgba(255, 255, 255, 0.5); }
+        .upload-area { border: 3px dashed rgba(59, 130, 246, 0.3); transition: all 0.3s ease; }
+        .upload-area:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
+    </style>
+</head>
+<body class="flex">
+
+    <aside class="w-72 glass-sidebar h-screen p-8 flex flex-col sticky top-0">
+        <div class="flex flex-col items-center mb-10">
+            <h2 class="text-2xl font-bold text-blue-600 tracking-wider text-center">ProtoVerse</h2>
+        </div>
+
+        <nav class="flex-grow space-y-4">
+            <button onclick="location.href='dashboard.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Dashboard</button>
+            <button onclick="location.href='manage_requests.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Manage Requests</button>
+            <button onclick="location.href='tracking.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Tracking</button>
+            <button class="w-full py-3 px-6 rounded-xl text-left font-semibold text-blue-700 bg-white/40 shadow-sm">Upload File</button>
+            <button onclick="location.href='history.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">History</button>
+            <button onclick="location.href='settings.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Settings</button>
+        </nav>
+        <button onclick="location.href='index.html'" class="mt-auto py-3 px-6 rounded-xl text-left font-medium text-red-500 hover:bg-red-50 transition">Sign Out</button>
+    </aside>
+
+    <main class="flex-1 p-12">
+        <header class="mb-10">
+            <h1 class="text-3xl font-bold text-slate-800">Upload 3D Files</h1>
+            <p class="text-slate-500">Add new STL, OBJ, or G-Code files to the system repository.</p>
+        </header>
+
+        <div class="glass-card max-w-4xl p-10 shadow-xl">
+            <form id="uploadForm" class="space-y-8">
+                <div class="upload-area rounded-3xl p-12 text-center cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                    <input type="file" id="fileInput" class="hidden">
+                    <div class="text-5xl mb-4">📤</div>
+                    <h3 class="text-xl font-bold text-slate-700" id="dragText">Click or Drag File Here</h3>
+                    <p class="text-sm text-slate-400 mt-2">Supports STL, OBJ, STEP, and GCODE (Max 50MB)</p>
+                    <div id="fileList" class="mt-4 text-blue-600 font-medium text-sm"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">File Name</label>
+                        <input type="text" id="assetName" required placeholder="e.g. Prototype_V1" 
+                            class="w-full px-5 py-3 rounded-xl bg-white/50 border border-white/50 outline-none focus:ring-2 focus:ring-blue-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Category</label>
+                        <select id="category" class="w-full px-5 py-3 rounded-xl bg-white/50 border border-white/50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-600">
+                            <option>STL</option>
+                            <option>OBJ</option>
+                            <option>GCODE</option>
+                            <option>STEP</option>
+                            <option>Others</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" id="uploadBtn" class="w-full bg-blue-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                     Upload
+                </button>
+
+                <div id="progressWrapper" class="hidden">
+                    <div class="w-full bg-white/30 rounded-full h-2">
+                        <div id="progressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <p id="statusMsg" class="text-center text-xs text-slate-500 mt-2 font-medium">Starting upload...</p>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+        // !!! IMPORTANT: INSERT YOUR CONFIG HERE !!!
+        const firebaseConfig = {
+        apiKey: "AIzaSyBe-HZcHhnZwNkAVfC6g-WQExyz0FsOrbo",
+        authDomain: "protoverse-vimytq.firebaseapp.com",
+        projectId: "protoverse-vimytq",
+        storageBucket: "protoverse-vimytq.firebasestorage.app",
+        messagingSenderId: "929755976903",
+        appId: "1:929755976903:web:4dab243f34697fdfe01ae2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const storage = getStorage(app);
+        const db = getFirestore(app);
+
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        fileInput.onchange = () => {
+            if(fileInput.files.length > 0) {
+                fileList.innerText = "Selected: " + fileInput.files[0].name;
+            }
+        };
+
+        uploadForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const file = fileInput.files[0];
+            const assetName = document.getElementById('assetName').value;
+
+            if(!file) return alert("Please select a file first!");
+            if(!assetName) return alert("Please enter an asset name!");
+
+            // Prepare UI
+            document.getElementById('progressWrapper').classList.remove('hidden');
+            uploadBtn.disabled = true;
+            uploadBtn.innerText = "Uploading...";
+
+            try {
+                // 1. Create unique path (Prevents overwrite errors)
+                const storageRef = ref(storage, 'AdminUploads/' + Date.now() + '_' + file.name);
+                
+                // 2. Start Upload
+                const uploadTask = uploadBytesResumable(storageRef, file);
+
+                uploadTask.on('state_changed', 
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        document.getElementById('progressBar').style.width = progress + '%';
+                        document.getElementById('statusMsg').innerText = `Uploading: ${Math.round(progress)}%`;
+                    }, 
+                    (error) => { 
+                        console.error("Upload Error:", error);
+                        alert("Storage Error: " + error.message + "\nCheck your Firebase Storage Rules!");
+                        resetUI();
+                    }, 
+                    async () => {
+                        // 3. Get Download URL
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+                        // 4. Save to Firestore
+                        await addDoc(collection(db, "Requests"), {
+                            fileName: assetName,
+                            fileURL: downloadURL,
+                            category: document.getElementById('category').value,
+                            userName: "Admin (ICT Unit)",
+                            status: "Pending",
+                            material: "Admin Upload",
+                            resolution: "Standard",
+                            createdAt: serverTimestamp() // Use server-side time
+                        });
+
+                        alert("File uploaded and registered successfully!");
+                        window.location.reload();
+                    }
+                );
+            } catch (err) {
+                console.error("System Error:", err);
+                alert("Critical Error: " + err.message);
+                resetUI();
+            }
+        };
+
+        function resetUI() {
+            uploadBtn.disabled = false;
+            uploadBtn.innerText = "Upload";
+            document.getElementById('progressWrapper').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

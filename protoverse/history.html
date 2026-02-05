@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProtoVerse | Print History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
+            min-height: 100vh;
+        }
+        .glass-sidebar {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(15px);
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .history-row {
+            transition: all 0.2s ease;
+        }
+        .history-row:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body class="flex">
+
+    <aside class="w-72 glass-sidebar h-screen p-8 flex flex-col sticky top-0">
+        <div class="flex flex-col items-center mb-10">
+            <h2 class="text-2xl font-bold text-blue-600 tracking-wider text-center">ProtoVerse</h2>
+        </div>
+        
+        <nav class="flex-grow space-y-4">
+            <button onclick="location.href='dashboard.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Dashboard</button>
+            <button onclick="location.href='manage_requests.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Manage Requests</button>
+            <button onclick="location.href='tracking.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Tracking</button>
+            <button onclick="location.href='upload.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Upload File</button>
+            <button class="w-full py-3 px-6 rounded-xl text-left font-semibold text-blue-700 bg-white/40 shadow-sm">History</button>
+            <button onclick="location.href='settings.html'" class="w-full py-3 px-6 rounded-xl text-left font-medium text-slate-600 hover:bg-white/30 transition">Settings</button>
+        </nav>
+        <button onclick="location.href='index.html'" class="mt-auto py-3 px-6 rounded-xl text-left font-medium text-red-500 hover:bg-red-50 transition">Sign Out</button>
+    </aside>
+
+    <main class="flex-1 p-12">
+        <header class="flex justify-between items-end mb-10">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">Print History</h1>
+                <p class="text-slate-500">Archive of all completed 3D printing tasks.</p>
+            </div>
+            <div class="text-right">
+                <span id="totalPrints" class="text-3xl font-bold text-blue-600">30</span>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Completed</p>
+            </div>
+        </header>
+
+        <div class="glass-panel shadow-lg overflow-hidden">
+            <table class="w-full text-left">
+                <thead class="bg-white/20 text-slate-500 text-xs uppercase tracking-widest border-b border-white/10">
+                    <tr>
+                        <th class="px-8 py-5">Date Finished</th>
+                        <th class="px-8 py-5">User ID</th>
+                        <th class="px-8 py-5">Project Name</th>
+                        <th class="px-8 py-5">Material Used</th>
+                        <th class="px-8 py-5 text-center">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody" class="divide-y divide-white/10 text-sm">
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        function loadHistoryData() {
+            const tableBody = document.getElementById('historyTableBody');
+            
+            // 30 Data History (Completed)
+            const historyData = [
+                { date: "01/02/2026", name: "Ahmad Zikri", file: "Drone_Arm_Left.stl", mat: "PLA" },
+                { date: "01/02/2026", name: "Siti Nurhaliza", file: "Vase_Decorative.obj", mat: "PETG" },
+                { date: "31/01/2026", name: "Tan Wei Kiat", file: "Gearbox_Case.step", mat: "ABS" },
+                { date: "31/01/2026", name: "Nurul Izzah", file: "Keychain_Logo.stl", mat: "PLA" },
+                { date: "30/01/2026", name: "Muthu Samy", file: "Tool_Handle.obj", mat: "PLA" },
+                { date: "30/01/2026", name: "Chong Kah Hou", file: "Building_Structure.stl", mat: "PLA" },
+                { date: "29/01/2026", name: "Ariff Danial", file: "Camera_Rig.step", mat: "ABS" },
+                { date: "29/01/2026", name: "Fatin Aqilah", file: "Jewelry_Box.obj", mat: "PLA" },
+                { date: "28/01/2026", name: "Vikram Naidu", file: "Robot_Finger.stl", mat: "PETG" },
+                { date: "28/01/2026", name: "Leong Siew Mei", file: "Mold_Template.obj", mat: "ABS" },
+                { date: "27/01/2026", name: "Hafiz Ibrahim", file: "Enclosure_V1.stl", mat: "PLA" },
+                { date: "27/01/2026", name: "Sarah Natasha", file: "Art_Sculpture.step", mat: "PLA" },
+                { date: "26/01/2026", name: "Chua En Lai", file: "Keyboard_Base.obj", mat: "ABS" },
+                { date: "26/01/2026", name: "Anis Suraya", file: "Kitchen_Organizer.stl", mat: "PLA" },
+                { date: "25/01/2026", name: "Kamal Adli", file: "Pipe_Connector.obj", mat: "PETG" },
+                { date: "25/01/2026", name: "Lim Guan Eng", file: "Support_Beam.stl", mat: "ABS" },
+                { date: "24/01/2026", name: "Ravi Shankar", file: "Turbine_Fan.step", mat: "PLA" },
+                { date: "24/01/2026", name: "Zulfaqar Ali", file: "Bolt_Large.obj", mat: "ABS" },
+                { date: "23/01/2026", name: "Elena Gilbert", file: "Halloween_Prop.stl", mat: "PLA" },
+                { date: "23/01/2026", name: "Syed Saddiq", file: "Stand_Holder.step", mat: "PETG" },
+                { date: "22/01/2026", name: "Nur Dhabitah", file: "Trophy_Base.obj", mat: "PLA" },
+                { date: "22/01/2026", name: "Kevin Sanjaya", file: "Grip_Custom.stl", mat: "ABS" },
+                { date: "21/01/2026", name: "Farah Ann", file: "Ribbon_Holder.step", mat: "PLA" },
+                { date: "21/01/2026", name: "Lee Zii Jia", file: "Handle_Ergonomic.obj", mat: "PLA" },
+                { date: "20/01/2026", name: "Azizulhasni", file: "Pedal_Mod.stl", mat: "ABS" },
+                { date: "20/01/2026", name: "Pandelela R.", file: "Weight_Clip.step", mat: "PETG" },
+                { date: "19/01/2026", name: "Aisya Humaira", file: "Book_End.obj", mat: "PLA" },
+                { date: "19/01/2026", name: "Irfan Sham", file: "Car_Dashboard_Part.stl", mat: "ABS" },
+                { date: "18/01/2026", name: "Ganesan P.", file: "Valve_Cap.step", mat: "PETG" },
+                { date: "18/01/2026", name: "Wong Mew Choo", file: "Referee_Whistle.obj", mat: "PLA" }
+            ];
+
+            tableBody.innerHTML = "";
+
+            historyData.forEach(data => {
+                const row = `
+                    <tr class="history-row">
+                        <td class="px-8 py-6 text-slate-500 font-medium">${data.date}</td>
+                        <td class="px-8 py-6 font-bold text-slate-700">${data.name}</td>
+                        <td class="px-8 py-6 text-blue-600 font-medium">${data.file}</td>
+                        <td class="px-8 py-6 text-slate-600">${data.mat}</td>
+                        <td class="px-8 py-6 text-center">
+                            <span class="px-3 py-1 bg-green-100 text-green-600 rounded-full text-[10px] font-bold uppercase tracking-tighter">Success</span>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        // Jalankan bila page load
+        window.onload = loadHistoryData;
+    </script>
+</body>
+</html>
